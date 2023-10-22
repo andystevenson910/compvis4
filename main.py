@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt 
 import pywt
-
+import skimage.util
 
 ##Problem 1
 def gaussian_low_pass(u_size, v_size, sigma1, sigma2):
@@ -61,11 +61,11 @@ def butterworth_high_pass(u_size, v_size, D0, n):
     center_u = u_size // 2
     center_v = v_size // 2
     H = np.zeros((u_size, v_size))
-    
     for u in range(u_size):
         for v in range(v_size):
             D = np.sqrt((u - center_u)**2 + (v - center_v)**2)
-            H[u, v] = 1 / (1 + (D0 / D)**(2*n))
+            if D != 0:
+                H[u, v] = 1 / (1 + (D0 / D)**(2*n))
             
     return H
 
@@ -232,7 +232,9 @@ max_level = pywt.dwt_max_level(len(img), 'db2')
 coeffs = pywt.wavedec2(img, 'db2', level=max_level)
 restored = pywt.waverec2(coeffs, 'db2')
 
-if np.array_equal(img, restored):
+#the choice for the all close function is to resolve an issue that arrises with a rounding difference
+#that affects literally 1 pixel ONE PIXEL so i just used all close instead but i stg its one pixel
+if np.allclose(img, restored):
     print("The original and the restored images are the same.")
 else:
     print("The original and the restored images are different.")
@@ -270,9 +272,37 @@ plt.figure(7), plt.imshow(restored_avg, cmap="gray"), plt.title('Avg Approximati
 plt.figure(8), plt.imshow(restored_h0, cmap="gray"), plt.title('Horizontal Detail as 0s')
 plt.figure(9), plt.imshow(restored_d0, cmap="gray"), plt.title('Diagonal Detail as 0s')
 plt.figure(10), plt.imshow(restored_v0, cmap="gray"), plt.title('Vertical Detail as 0s')
-plt.show()
 
 
+### section 5
+def threshold_coefficients(coeffs, threshold):
+    return pywt.threshold(coeffs, threshold, mode='soft')
 
+def compute_threshold(coeffs, M):
+    sigma = np.median(np.abs(coeffs)) / 0.6745
+    return sigma * np.sqrt(2 * np.log(M))
 
+def denoise_method(image, method):
+    coeffs = pywt.wavedec2(image, 'db2', level=3)
+    for i in range(1, 4):
+        M = len(coeffs[i][0]) * len(coeffs[i][1])
+        if method == 1 and i == 1:
+            sigma = compute_threshold(coeffs[i][2], M)
+        else:
+            sigma = compute_threshold(np.concatenate(coeffs[i]), M)
+        threshold = sigma * np.sqrt(2 * np.log(M))
+        coeffs[i] = tuple(map(lambda x: threshold_coefficients(x, threshold), coeffs[i]))
+    return pywt.waverec2(coeffs, 'db2')
+
+image = cv2.imread('Lena.jpg', cv2.IMREAD_GRAYSCALE)
+noisy_image = skimage.util.random_noise(image, mode='gaussian', mean = 0, var = 0.01)
+cv2.imwrite('NoisyLena.bmp', noisy_image)
+
+denoised_image1 = denoise_method(noisy_image, 1)
+denoised_image2 = denoise_method(noisy_image, 2)
+
+plt.figure()
+plt.subplot(1, 3, 1), plt.imshow(noisy_image, cmap='gray'), plt.title('Noisy Image')
+plt.subplot(1, 3, 2), plt.imshow(denoised_image1, cmap='gray'), plt.title('Denoised Method 1')
+plt.subplot(1, 3, 3), plt.imshow(denoised_image2, cmap='gray'), plt.title('Denoised Method 2')
 plt.show()
