@@ -38,11 +38,11 @@ filtered_image = np.abs(np.fft.ifft2(filtered_f))
 plt.figure(figsize=(15, 5))
 
 plt.subplot(1, 3, 1)
-plt.imshow(image, cmap='grey')
+plt.imshow(image, cmap='gray')
 plt.title('Original Image')
 
 plt.subplot(1, 3, 2)
-plt.imshow(np.log(1+np.abs(H)), cmap='grey')
+plt.imshow(np.log(1+np.abs(H)), cmap='gray')
 plt.title('Gaussian Low-pass Filter')
 
 plt.subplot(1, 3, 3)
@@ -50,7 +50,6 @@ plt.imshow(filtered_image, cmap='gray')
 plt.title('Filtered Image')
 
 plt.tight_layout()
-plt.show()
 
 
 #problem 2
@@ -103,6 +102,70 @@ plt.imshow(filtered_image, cmap='gray')
 plt.title('Filtered Image')
 
 plt.tight_layout()
+
+
+
+###section 2 
+#prb1
+
+# Load the images
+sample_image = cv2.imread('Sample.jpg', cv2.IMREAD_GRAYSCALE)
+capital_image = cv2.imread('Capitol.jpg', cv2.IMREAD_GRAYSCALE)
+
+# Apply the 2D Fourier Transform to the images
+f_sample = np.fft.fft2(sample_image)
+f_capital = np.fft.fft2(capital_image)
+
+# Shift the zero-frequency component to the center of the spectrum
+fshift_sample = np.fft.fftshift(f_sample)
+fshift_capital = np.fft.fftshift(f_capital)
+
+# Get magnitude and phase for both images
+magnitude_spectrum_sample = np.log(np.abs(fshift_sample) + 1)
+magnitude_spectrum_capital = np.log(np.abs(fshift_capital) + 1)
+
+phase_spectrum_sample = np.angle(fshift_sample)
+phase_spectrum_capital = np.angle(fshift_capital)
+
+# Display the results
+plt.figure('Figure 3')
+
+plt.subplot(2, 2, 1), plt.imshow(magnitude_spectrum_sample, cmap='gray')
+plt.title('Sample Magnitude Spectrum'), plt.axis('off')
+
+plt.subplot(2, 2, 2), plt.imshow(magnitude_spectrum_capital, cmap='gray')
+plt.title('Capital Magnitude Spectrum'), plt.axis('off')
+
+plt.subplot(2, 2, 3), plt.imshow(phase_spectrum_sample, cmap='gray')
+plt.title('Sample Phase Spectrum'), plt.axis('off')
+
+plt.subplot(2, 2, 4), plt.imshow(phase_spectrum_capital, cmap='gray')
+plt.title('Capital Phase Spectrum'), plt.axis('off')
+
+
+
+###prb2
+
+reconstructed_capital_fshift = np.abs(fshift_sample) * np.exp(1j * phase_spectrum_capital)
+reconstructed_sample_fshift = np.abs(fshift_capital) * np.exp(1j * phase_spectrum_sample)
+
+# Apply inverse Fourier transform
+reconstructed_capital = np.abs(np.fft.ifft2(np.fft.ifftshift(reconstructed_capital_fshift)))
+reconstructed_sample = np.abs(np.fft.ifft2(np.fft.ifftshift(reconstructed_sample_fshift)))
+
+# Display the reconstructed images
+plt.figure('Figure 4')
+
+plt.subplot(1, 2, 1), plt.imshow(reconstructed_sample, cmap='gray')
+plt.title('Reconstructed Sample'), plt.axis('off')
+
+plt.subplot(1, 2, 2), plt.imshow(reconstructed_capital, cmap='gray')
+plt.title('Reconstructed Capital'), plt.axis('off')
+
+
+
+
+
 plt.show()
 
 
