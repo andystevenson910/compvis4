@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
+import pywt
 
 
 ##Problem 1
@@ -221,4 +222,57 @@ for idx, count in enumerate(max_counts, 1):
     plt.title(f'Restored Image ({count} Max Locations)')
 
 plt.tight_layout()
+
+
+###section 4
+
+# 1. Compute Maximum Decomposition Level and Restore Image:
+img = cv2.imread("lena.jpg", cv2.IMREAD_GRAYSCALE)
+max_level = pywt.dwt_max_level(len(img), 'db2')
+coeffs = pywt.wavedec2(img, 'db2', level=max_level)
+restored = pywt.waverec2(coeffs, 'db2')
+
+if np.array_equal(img, restored):
+    print("The original and the restored images are the same.")
+else:
+    print("The original and the restored images are different.")
+
+# 2. 3-Level “db2” Wavelet Decomposition:
+coeffs_3 = pywt.wavedec2(img, 'db2', level=3)
+
+# a) Set the 16 values of each 4×4 non-overlapping block in the approximation subband as its average.
+cA3_avg = coeffs_3[0].copy()
+h, w = cA3_avg.shape
+for i in range(0, h, 4):
+    for j in range(0, w, 4):
+        mean_val = np.mean(cA3_avg[i:i+4, j:j+4])
+        cA3_avg[i:i+4, j:j+4] = mean_val
+coeffs_3_avg = [cA3_avg] + coeffs_3[1:]
+restored_avg = pywt.waverec2(coeffs_3_avg, 'db2')
+
+# b) Set the first level horizontal detail coefficients as 0’s.
+coeffs_3_h0 = coeffs_3.copy()
+coeffs_3_h0[1] = (coeffs_3_h0[1][0], np.zeros_like(coeffs_3_h0[1][1]), coeffs_3_h0[1][2])
+restored_h0 = pywt.waverec2(coeffs_3_h0, 'db2')
+
+# c) Set the second level diagonal detail coefficients as 0’s.
+coeffs_3_d0 = coeffs_3.copy()
+coeffs_3_d0[2] = (coeffs_3_d0[2][0], coeffs_3_d0[2][1], np.zeros_like(coeffs_3_d0[2][2]))
+restored_d0 = pywt.waverec2(coeffs_3_d0, 'db2')
+
+# d) Set the third level vertical detail coefficients as 0’s.
+coeffs_3_v0 = coeffs_3.copy()
+coeffs_3_v0[3] = (np.zeros_like(coeffs_3_v0[3][0]), coeffs_3_v0[3][1], coeffs_3_v0[3][2])
+restored_v0 = pywt.waverec2(coeffs_3_v0, 'db2')
+
+# Display
+plt.figure(7), plt.imshow(restored_avg, cmap="gray"), plt.title('Avg Approximation')
+plt.figure(8), plt.imshow(restored_h0, cmap="gray"), plt.title('Horizontal Detail as 0s')
+plt.figure(9), plt.imshow(restored_d0, cmap="gray"), plt.title('Diagonal Detail as 0s')
+plt.figure(10), plt.imshow(restored_v0, cmap="gray"), plt.title('Vertical Detail as 0s')
+plt.show()
+
+
+
+
 plt.show()
