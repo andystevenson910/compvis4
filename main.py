@@ -163,9 +163,62 @@ plt.subplot(1, 2, 2), plt.imshow(reconstructed_capital, cmap='gray')
 plt.title('Reconstructed Capital'), plt.axis('off')
 
 
+###section 3
 
 
 
+def compute_dft(image):
+    dft = cv2.dft(np.float32(image), flags=cv2.DFT_COMPLEX_OUTPUT)
+    dft_shifted = np.fft.fftshift(dft)
+    return dft_shifted
+
+def magnitude_spectrum(dft_shifted):
+    magnitude = 20 * np.log(cv2.magnitude(dft_shifted[:, :, 0], dft_shifted[:, :, 1]))
+    return magnitude
+
+def locate_largest_magnitudes(magnitude, count):
+    # Mask the 3x3 center
+    center = np.array(magnitude.shape) // 2
+    magnitude[center[0]-1:center[0]+2, center[1]-1:center[1]+2] = 0
+
+    # Get the indices of the largest magnitudes
+    indices = np.unravel_index(np.argsort(magnitude.ravel())[-count:], magnitude.shape)
+    return indices
+
+def replace_with_neighbors_average(dft_shifted, indices):
+    # For each index, replace its value with the average of its 8 neighbors
+    for i, j in zip(*indices):
+        neighbors = []
+        for x in [-1, 0, 1]:
+            for y in [-1, 0, 1]:
+                if x == 0 and y == 0:
+                    continue
+                neighbors.append(dft_shifted[i + x, j + y])
+        dft_shifted[i, j] = np.mean(neighbors, axis=0)
+    return dft_shifted
+
+# Load the image
+image_path = "boy_noisy.gif" # change this to the path of your image if different
+image = plt.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+# Compute the DFT and magnitude spectrum
+dft_shifted = compute_dft(image)
+magnitude = magnitude_spectrum(dft_shifted)
+
+# Display the resultant images as per step 6
+plt.figure('Figure 6')
+max_counts = [2, 3, 5, 6]
+
+for idx, count in enumerate(max_counts, 1):
+    indices = locate_largest_magnitudes(magnitude.copy(), count)
+    modified_fshift = replace_with_neighbors_average(dft_shifted.copy(), indices)
+    
+    restored_image = cv2.idft(np.fft.ifftshift(modified_fshift))
+    restored_image = cv2.magnitude(restored_image[:, :, 0], restored_image[:, :, 1])
+    
+    plt.subplot(1, 4, idx)
+    plt.imshow(restored_image, cmap='gray')
+    plt.title(f'Restored Image ({count} Max Locations)')
+
+plt.tight_layout()
 plt.show()
-
-
