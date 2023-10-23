@@ -254,17 +254,52 @@ restored_avg = pywt.waverec2(coeffs_3_avg, 'db2')
 
 # b) Set the first level horizontal detail coefficients as 0’s.
 coeffs_3_h0 = coeffs_3.copy()
-coeffs_3_h0[1] = (coeffs_3_h0[1][0], np.zeros_like(coeffs_3_h0[1][1]), coeffs_3_h0[1][2])
+
+
+#coeffs_3_h0[1] = (coeffs_3_h0[1][0], np.zeros_like(coeffs_3_h0[1][1]), coeffs_3_h0[1][2])
+num_rows = len(coeffs_3_h0[1][1])
+num_cols = len(coeffs_3_h0[1][1][0]) if num_rows > 0 else 0
+
+# Create a 2D matrix of zeros of the same size
+zeros_matrix = [[0] * num_cols for _ in range(num_rows)]
+
+# Update the tuple
+coeffs_3_h0[1] = (coeffs_3_h0[1][0], zeros_matrix, coeffs_3_h0[1][2])
+
+
+
+
 restored_h0 = pywt.waverec2(coeffs_3_h0, 'db2')
 
 # c) Set the second level diagonal detail coefficients as 0’s.
+# Assuming coeffs_3 is some data structure you've previously defined
 coeffs_3_d0 = coeffs_3.copy()
-coeffs_3_d0[2] = (coeffs_3_d0[2][0], coeffs_3_d0[2][1], np.zeros_like(coeffs_3_d0[2][2]))
+
+# Get the dimensions of the original 2D matrix
+num_rows = len(coeffs_3_d0[2][2])
+num_cols = len(coeffs_3_d0[2][2][0]) if num_rows > 0 else 0
+
+# Create a 2D matrix of zeros of the same size
+zeros_matrix = [[0] * num_cols for _ in range(num_rows)]
+
+# Update the tuple
+coeffs_3_d0[2] = (coeffs_3_d0[2][0], coeffs_3_d0[2][1], zeros_matrix)
 restored_d0 = pywt.waverec2(coeffs_3_d0, 'db2')
 
+
 # d) Set the third level vertical detail coefficients as 0’s.
+# Assuming coeffs_3 is some data structure you've previously defined
 coeffs_3_v0 = coeffs_3.copy()
-coeffs_3_v0[3] = (np.zeros_like(coeffs_3_v0[3][0]), coeffs_3_v0[3][1], coeffs_3_v0[3][2])
+
+# Get the dimensions of the original 2D matrix
+num_rows = len(coeffs_3_v0[3][0])
+num_cols = len(coeffs_3_v0[3][0][0]) if num_rows > 0 else 0
+
+# Create a 2D matrix of zeros of the same size
+zeros_matrix = [[0] * num_cols for _ in range(num_rows)]
+
+# Update the tuple
+coeffs_3_v0[3] = (zeros_matrix, coeffs_3_v0[3][1], coeffs_3_v0[3][2])
 restored_v0 = pywt.waverec2(coeffs_3_v0, 'db2')
 
 # Display
